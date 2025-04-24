@@ -1,21 +1,22 @@
+// === BACKEND: routes/schedule.js ===
 const express = require('express');
 const Schedule = require('../models/Schedule');
 const authMiddleware = require('../middleware/authMiddleware');
-
 const router = express.Router();
+
 router.use(authMiddleware);
 
-// ✅ Get all schedules – accessible to all users
 router.get('/', async (req, res) => {
   try {
-    const schedules = await Schedule.find(); // Admin + User can view all
+    const schedules = req.user.role === 'admin'
+      ? await Schedule.find()
+      : await Schedule.find({ assignedEmail: req.user.email });
     res.status(200).json(schedules);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch schedules', error: error.message });
   }
 });
 
-// ✅ Add schedule – only for admin
 router.post('/', async (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Access denied: Admins only' });
@@ -30,7 +31,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// ✅ Update schedule – only for admin
 router.put('/:id', async (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Access denied: Admins only' });
@@ -45,7 +45,6 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// ✅ Delete schedule – only for admin
 router.delete('/:id', async (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Access denied: Admins only' });
